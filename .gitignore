@@ -140,3 +140,6 @@ results*
 *.png
 *.csv
 nohup.out
+
+.idea/workspace.xml
+.idea/*
