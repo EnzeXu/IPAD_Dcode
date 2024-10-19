@@ -697,15 +697,15 @@ def check_existing_record(task_date, ode_name, n_dynamic, noise_ratio, task_ode_
 
 if __name__ == "__main__":
 
-
-    result1 = judge_expression_equal("C*x*y + C*x", "C*x*y + x")
-    result2 = judge_expression_equal("C*sin(x) + C*y", "C*sin(C*x) + C*y")
-    result3 = judge_expression_equal("C*x*y + C*x", "C*x*y + x + C")
-    result4 = judge_expression_equal("C*x*y + C*x", "C+x+C*x*y")
-
-    print(result1)
-    print(result2)
-    print(result3)
+    print(simplify_and_replace_constants("-C*X1 + C"))
+    # result1 = judge_expression_equal("C*x*y + C*x", "C*x*y + x")
+    # result2 = judge_expression_equal("C*sin(x) + C*y", "C*sin(C*x) + C*y")
+    # result3 = judge_expression_equal("C*x*y + C*x", "C*x*y + x + C")
+    # result4 = judge_expression_equal("C*x*y + C*x", "C+x+C*x*y")
+    #
+    # print(result1)
+    # print(result2)
+    # print(result3)
 
     # print(simplify_and_replace_constants("-8.7 / 1.5 * sin(x) - 1.1 * y"))
     # print(simplify_and_replace_constants("-8.7 / 1.5 * sin(x) - 1.1 * y ** 2"))

@@ -37,28 +37,37 @@ def get_now_string(time_string="%Y%m%d_%H%M%S_%f"):
 
 
 
-def run(ode_name, ode_param, x_id, freq, n_sample, noise_ratio, seed, n_basis, basis_str, ipad_data, args):
+def run(ode_name, ode_param, x_id, freq, n_sample, noise_ratio, seed, n_basis, basis_str, ipad_data, args, data_timestring, curve_names, ipad_args):
+    log_start_time = args.timestring
 
     save_dir = args.save_dir
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
+
+    log_path = f"{save_dir}/{ipad_args.task}_end.csv"
+
+    if not os.path.exists(log_path):
+        with open(log_path, "a") as f:
+            f.write(f"start_time,end_time,data_time,task,n_dynamic,task_ode_num,correct,noise_ratio,env_id,time_cost,f_hat,f_true,cleaned_pred,cleaned_truth,match,seed\n")
+
     
     import pandas as pd
     try:
-        df = pd.read_csv(f"{save_dir}/summary_{args.dataset}.csv", header=None,
-                        names=['end_time', 'status', 'ODE', 'x_id', 'correct', 'noise', 'env', 'seed', "time_elapsed"]
-                        )
-        df = df[df["status"] == "End"]
+        # df = pd.read_csv(f"{save_dir}/summary_{args.dataset}.csv", header=None,
+        #                 names=['end_time', 'status', 'ODE', 'x_id', 'correct', 'noise', 'env_id', 'seed', "time_elapsed"]
+        #                 )
+        df = pd.read_csv(f"{save_dir}/summary_{args.dataset}.csv")
+        # df = df[df["status"] == "End"]
         df = df.astype({
         #     'term_success_predicted_rate': 'float32',
         #     'correct': 'bool',
-            'env': 'int32',
+            'env_id': 'int32',
             'seed': 'int32',
             'x_id': 'float32',
             'noise': 'float32',
         })
         df["correct"] = df["correct"].apply(lambda x: True if x=="True" else False)
-        current_entry = df[(df.seed==seed) & (df.env==args.env) & (df.x_id==x_id) & (df.noise==noise_ratio) &  (df["ODE"]==ode_name)]
+        current_entry = df[(df.seed==seed) & (df.env_id==args.env_id) & (df.x_id==x_id) & (df.noise==noise_ratio) & (df.n_dynamic==ipad_args.n_dynamic) &  (df["task"]==ode_name)]
         if len(current_entry) == 0:
             pass
         else:
@@ -71,7 +80,7 @@ def run(ode_name, ode_param, x_id, freq, n_sample, noise_ratio, seed, n_basis, b
     
     np.random.seed(seed)
 
-    ode = equations.get_ode(ode_name, ode_param, args.env, data=ipad_data)
+    ode = equations.get_ode(ode_name, ode_param, args.env_id, data=ipad_data)
     T = ode.T
     init_low = 0
     init_high = ode.init_high
@@ -83,33 +92,33 @@ def run(ode_name, ode_param, x_id, freq, n_sample, noise_ratio, seed, n_basis, b
 
     noise_sigma = ode.std_base * noise_ratio  
     
-    dg = data.DataGenerator(ode, ode_name, T, freq, n_sample, noise_sigma, init_low, init_high, False, args.env, seed=seed, dataset=args.dataset)
+    dg = data.DataGenerator(ode, ode_name, T, freq, n_sample, noise_sigma, init_low, init_high, False, args.env_id, seed=seed, dataset=ipad_args.n_dynamic)
     yt = dg.generate_data()
     
     
     print("yt.shape", yt.shape)
     if ipad_data:
-        t = ipad_data['t_series_list'][args.env]
+        t = ipad_data['t_series_list'][args.env_id]
     else:
         t = dg.solver.t[:yt.shape[0]]
     ode_data, X_ph, y_ph, t_new = get_ode_data(yt, x_id, t, dg, ode, n_basis, basis_obj,
-                                              env = args.env)
+                                              env=args.env_id)
 
-    path_base = 'results_vi/{}/noise-{}/sample-{}/freq-{}/n_basis-{}/basis-{}'.\
-        format(ode_name, noise_ratio, n_sample, freq, n_basis, basis_str)
-
-    if not os.path.isdir(path_base):
-        os.makedirs(path_base)
+    # path_base = 'results_vi/{}/noise-{}/sample-{}/freq-{}/n_basis-{}/basis-{}'.\
+    #     format(ode_name, noise_ratio, n_sample, freq, n_basis, basis_str)
+    #
+    # if not os.path.isdir(path_base):
+    #     os.makedirs(path_base)
 
     # for s in range(seed, seed+1):
 #         print(' ')
-    s = seed
-    print('Running with seed {}'.format(s))
+
+    print('Running with seed {}'.format(seed))
     start = time.time()
 #         print(X_ph.shape, y_ph.shape, x_id)
 #         import pdb;pdb.set_trace()
 
-    f_hat, est_gp = run_gp_ode(ode_data, X_ph, y_ph,  ode, x_id, s)
+    f_hat, est_gp = run_gp_ode(ode_data, X_ph, y_ph,  ode, x_id, seed)
 
     if ipad_data:
         f_true = ipad_data['params_config']['truth_ode_format'][x_id]
@@ -125,23 +134,31 @@ def run(ode_name, ode_param, x_id, freq, n_sample, noise_ratio, seed, n_basis, b
 #         print(correct_list)
     # results/${ode}/noise-${noise}-seed-${seed}-env-${env}.txt
     # s, f_hat, f_true, x_id
-    log_path = f"{save_dir}/summary_{args.dataset}.csv"
+
     log_end_time = get_now_string()
     end = time.time()
 
     f_true_clear = f_true.format(*[1.0] * f_true.count("{"))
     f_true_clear = simplify_and_replace_constants(f_true_clear)
 
+    f_hat_clear = str(f_hat)
+    for i_curve, one_curve_name in enumerate(curve_names):
+        f_hat_clear = f_hat_clear.replace(f"X{i_curve}", one_curve_name)
+    f_hat_clear = simplify_and_replace_constants(f_hat_clear)
+
+    match = judge_expression_equal(f_true_clear, f_hat_clear)
+
+
     with open(log_path, "a") as f:
-        f.write(f"{log_end_time},{ode_name},{x_id},{correct},{noise_ratio:.6f},{args.env},{s},{end-start},{f_hat},{f_true},{f_true_clear}\n")
+        f.write(f"{log_start_time},{log_end_time},{data_timestring},{ode_name},{ipad_args.n_dynamic},{x_id},{correct},{noise_ratio:.3f},{args.env_id},{end-start},{f_hat},{f_true},{f_hat_clear},{f_true_clear},{match},{seed}\n")
         # f.write(f"{log_end_time},truth,{str(f_true)}\n")
         # f.write(f"{log_end_time},prediction,{str(f_hat)}\n")
 
-    if x_id == 0:
-        path = path_base + 'grad_seed_{}.pkl'.format(s)
-    else:
-        path = path_base + 'grad_x_{}_seed_{}.pkl'.format(x_id, s)
-    
+    # if x_id == 0:
+    #     path = path_base + 'grad_seed_{}.pkl'.format(seed)
+    # else:
+    #     path = path_base + 'grad_x_{}_seed_{}.pkl'.format(x_id, seed)
+    #
 
 #         with open(path, 'wb') as f:
 #             pickle.dump({
@@ -163,21 +180,25 @@ def run(ode_name, ode_param, x_id, freq, n_sample, noise_ratio, seed, n_basis, b
 
 
 if __name__ == '__main__':
+    command = " ".join(sys.argv)
+    print(f"Command: {command}")
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--ode_name", help="name of the ode", type=str)
     parser.add_argument("--ode_param", help="parameters of the ode (default: None)", type=str, default=None)
     parser.add_argument("--x_id", help="ID of the equation to be learned", type=int, default=0)
     parser.add_argument("--freq", help="sampling frequency", type=float, default=10)
-    parser.add_argument("--n_sample", help="number of trajectories", type=int, default=100)
-    parser.add_argument("--noise_ratio", help="noise level (default 0)", type=float, default=0.)
+    # parser.add_argument("--n_sample", help="number of trajectories", type=int, default=100)
+    # parser.add_argument("--noise_ratio", help="noise level (default 0)", type=float, default=0.)
     parser.add_argument("--n_basis", help="number of basis function", type=int, default=50)
     parser.add_argument("--basis", help="basis function", type=str, default='sine')
 
-    parser.add_argument("--seed", help="random seed", type=int, default=0)
-    parser.add_argument("--env", help="random seed", type=int, default=1)
-    parser.add_argument("--dataset", help=" ", type=str, default="default_1")
-    parser.add_argument("--save_dir", help=" ", type=str, default="./result")
+    # parser.add_argument("--seed", help="random seed", type=int, default=0)
+    parser.add_argument("--env_id", help="random seed", type=int, default=-1) # 1
+    # parser.add_argument("--dataset", help=" ", type=str, default="default_1")
+    # parser.add_argument("--save_dir", help=" ", type=str, default="./result")
     parser.add_argument("--load_ipad_data", help=" ", type=str, default="")
+    parser.add_argument("--timestring", help="timestring", type=str, default='20001111_222222_333333')
     
     args = parser.parse_args()
     print('Running with: ', args)
@@ -192,18 +213,26 @@ if __name__ == '__main__':
             ipad_data = pickle.load(file)
         ode_name = ipad_data['args'].task
         param = None
-        x_id = ipad_data['args'].task_ode_num - 1
-        n_sample = 1
+        # x_id = ipad_data['args'].task_ode_num - 1
+        n_sample = -1
         noise_ratio = ipad_data['args'].noise_ratio
         seed = ipad_data['args'].seed
+        data_timestring = ipad_data['args'].timestring
+        curve_names = ipad_data["params_config"]["curve_names"]
+        ipad_args = ipad_data['args']
+        args.save_dir = f"./logs/{ipad_args.task}/"
+        args.x_id = args.x_id - 1
     else:
-        ode_name = args.ode_name
-        param = param
-        x_id = args.x_id
-        n_sample = args.n_sample
-        noise_ratio = args.noise_ratio
-        seed = args.seed
-        ipad_data = None
+        # ode_name = args.ode_name
+        # param = param
+        # x_id = args.x_id
+        # n_sample = args.n_sample
+        # noise_ratio = args.noise_ratio
+        # seed = args.seed
+        # ipad_data = None
+        # timestring = get_now_string()
+        raise NotImplementedError
 
     
-    run(args.ode_name, param, args.x_id, args.freq, args.n_sample, args.noise_ratio, seed=args.seed, n_basis=args.n_basis, basis_str=args.basis, ipad_data=ipad_data, args=args)
+    run(ode_name, param, args.x_id, args.freq, n_sample, noise_ratio, seed, n_basis=args.n_basis, basis_str=args.basis, ipad_data=ipad_data, args=args, data_timestring=data_timestring, curve_names=curve_names, ipad_args=ipad_args)
+    # python -u run_dcode.py --basis=sine --n_basis=50 --env_id=${env_id} --load_ipad_data=${test_folder} 2>&1 | tee -a outputs/${task}_${timestring}.txt

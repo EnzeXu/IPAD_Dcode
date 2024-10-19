@@ -187,7 +187,7 @@ if __name__ == '__main__':
         ode_name = ipad_data['args'].task
         param = None
         x_id = ipad_data['args'].task_ode_num - 1
-        n_sample = 1
+        n_sample = 80
         noise_ratio = ipad_data['args'].noise_ratio
         seed = ipad_data['args'].seed
     else:
