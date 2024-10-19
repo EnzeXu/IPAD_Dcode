@@ -1,6 +1,6 @@
 #!/bin/bash
 # Navigate to the workspace
-cd /data2/enze/workspace/Invariant_Physics
+cd /data2/enze/workspace/IPAD_Dcode
 
 # Check if the tmux session exists
 tmux has-session -t pp_default_0_2_0-9 2>/dev/null
