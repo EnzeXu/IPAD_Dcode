@@ -9,5 +9,5 @@ torch
 torchdiffeq
 git+https://github.com/ZhaozhiQIAN/gplearn
 gpytorch
-
+tqdm
 

@@ -148,9 +148,10 @@ def run(ode_name, ode_param, x_id, freq, n_sample, noise_ratio, seed, n_basis, b
 
     match = judge_expression_equal(f_true_clear, f_hat_clear)
 
-
+    end_result_line = f"{log_start_time},{log_end_time},{data_timestring},{ode_name},{ipad_args.n_dynamic},{x_id},{correct},{noise_ratio:.3f},{args.env_id},{end-start},{f_hat},{f_true},{f_hat_clear},{f_true_clear},{match},{seed}\n"
     with open(log_path, "a") as f:
-        f.write(f"{log_start_time},{log_end_time},{data_timestring},{ode_name},{ipad_args.n_dynamic},{x_id},{correct},{noise_ratio:.3f},{args.env_id},{end-start},{f_hat},{f_true},{f_hat_clear},{f_true_clear},{match},{seed}\n")
+        f.write(end_result_line)
+    print(end_result_line)
         # f.write(f"{log_end_time},truth,{str(f_true)}\n")
         # f.write(f"{log_end_time},prediction,{str(f_hat)}\n")
 
