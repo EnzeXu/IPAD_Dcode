@@ -37,7 +37,7 @@ def get_now_string(time_string="%Y%m%d_%H%M%S_%f"):
 
 
 
-def run(ode_name, ode_param, x_id, freq, n_sample, noise_ratio, seed, n_basis, basis_str, ipad_data, args, data_timestring, curve_names, ipad_args):
+def run(ode_name, ode_param, x_id, freq, n_sample, noise_ratio, seed, n_basis, basis_str, ipad_data, args, data_timestring, curve_names, ipad_args, ipad_params_config):
     log_start_time = args.timestring
 
     save_dir = args.save_dir
@@ -138,7 +138,7 @@ def run(ode_name, ode_param, x_id, freq, n_sample, noise_ratio, seed, n_basis, b
     log_end_time = get_now_string()
     end = time.time()
 
-    f_true_clear = f_true.format(*[1.0] * f_true.count("{"))
+    f_true_clear = ipad_params_config['truth_ode_format'][x_id].format(*[1.0 for _ in range(len(ipad_params_config["random_params_base"]))])
     f_true_clear = simplify_and_replace_constants(f_true_clear)
 
     f_hat_clear = str(f_hat)
@@ -221,6 +221,7 @@ if __name__ == '__main__':
         data_timestring = ipad_data['args'].timestring
         curve_names = ipad_data["params_config"]["curve_names"]
         ipad_args = ipad_data['args']
+        ipad_params_config = ipad_data["params_config"]
         args.save_dir = f"./logs/{ipad_args.task}/"
         args.x_id = args.x_id - 1
     else:
@@ -235,5 +236,5 @@ if __name__ == '__main__':
         raise NotImplementedError
 
     
-    run(ode_name, param, args.x_id, args.freq, n_sample, noise_ratio, seed, n_basis=args.n_basis, basis_str=args.basis, ipad_data=ipad_data, args=args, data_timestring=data_timestring, curve_names=curve_names, ipad_args=ipad_args)
+    run(ode_name, param, args.x_id, args.freq, n_sample, noise_ratio, seed, n_basis=args.n_basis, basis_str=args.basis, ipad_data=ipad_data, args=args, data_timestring=data_timestring, curve_names=curve_names, ipad_args=ipad_args, ipad_params_config=ipad_params_config)
     # python -u run_dcode.py --basis=sine --n_basis=50 --env_id=${env_id} --load_ipad_data=${test_folder} 2>&1 | tee -a outputs/${task}_${timestring}.txt
