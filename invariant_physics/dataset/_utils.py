@@ -617,9 +617,10 @@ def simplify_and_replace_constants(expr_str):
 
     # Replace matched floats with 'C'
     modified_expr = re.sub(pattern, 'C', expr_str)
+    modified_expr = str(sp.expand(modified_expr))
     modified_expr = modified_expr.replace("-", "+")
     if modified_expr[0] == "+":
-        return modified_expr[1:]
+        modified_expr = modified_expr[1:]
 
     return modified_expr
 
@@ -697,7 +698,7 @@ def check_existing_record(task_date, ode_name, n_dynamic, noise_ratio, task_ode_
 
 if __name__ == "__main__":
 
-    print(simplify_and_replace_constants("-C*X1 + C"))
+
     # result1 = judge_expression_equal("C*x*y + C*x", "C*x*y + x")
     # result2 = judge_expression_equal("C*sin(x) + C*y", "C*sin(C*x) + C*y")
     # result3 = judge_expression_equal("C*x*y + C*x", "C*x*y + x + C")
@@ -706,6 +707,15 @@ if __name__ == "__main__":
     # print(result1)
     # print(result2)
     # print(result3)
+
+    str1 = "C*x*(-C*y + C)"
+    str2 = "-0.39*x+1.0*x*y"
+
+    print(simplify_and_replace_constants(str1))
+    print(simplify_and_replace_constants(str2))
+    print(judge_expression_equal(simplify_and_replace_constants(str1), simplify_and_replace_constants(str2)))
+
+    # print(simplify_and_replace_constants("11.2*x*(-4.5)*y+0.09*x"))
 
     # print(simplify_and_replace_constants("-8.7 / 1.5 * sin(x) - 1.1 * y"))
     # print(simplify_and_replace_constants("-8.7 / 1.5 * sin(x) - 1.1 * y ** 2"))
