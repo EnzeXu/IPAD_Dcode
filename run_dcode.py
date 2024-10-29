@@ -48,7 +48,7 @@ def run(ode_name, ode_param, x_id, freq, n_sample, noise_ratio, seed, n_basis, b
 
     if not os.path.exists(log_path):
         with open(log_path, "a") as f:
-            f.write(f"start_time,end_time,data_time,task,n_dynamic,task_ode_num,correct,noise_ratio,env_id,time_cost,f_hat,f_true,cleaned_pred,cleaned_truth,match,seed\n")
+            f.write(f"start_time,end_time,data_time,task,n_dynamic,task_ode_num,correct,noise_ratio,env_id,trajectory,time_cost,f_hat,f_true,cleaned_pred,cleaned_truth,match,seed\n")
 
     
     import pandas as pd
@@ -93,65 +93,66 @@ def run(ode_name, ode_param, x_id, freq, n_sample, noise_ratio, seed, n_basis, b
     noise_sigma = ode.std_base * noise_ratio  
     
     dg = data.DataGenerator(ode, ode_name, T, freq, n_sample, noise_sigma, init_low, init_high, False, args.env_id, seed=seed, dataset=ipad_args.n_dynamic)
-    yt = dg.generate_data()
+    yts = dg.generate_data()
     
-    
-    print("yt.shape", yt.shape)
-    if ipad_data:
-        t = ipad_data['t_series_list'][args.env_id]
-    else:
-        t = dg.solver.t[:yt.shape[0]]
-    ode_data, X_ph, y_ph, t_new = get_ode_data(yt, x_id, t, dg, ode, n_basis, basis_obj,
-                                              env=args.env_id)
-
-    # path_base = 'results_vi/{}/noise-{}/sample-{}/freq-{}/n_basis-{}/basis-{}'.\
-    #     format(ode_name, noise_ratio, n_sample, freq, n_basis, basis_str)
-    #
-    # if not os.path.isdir(path_base):
-    #     os.makedirs(path_base)
-
-    # for s in range(seed, seed+1):
-#         print(' ')
-
-    print('Running with seed {}'.format(seed))
-    start = time.time()
-#         print(X_ph.shape, y_ph.shape, x_id)
-#         import pdb;pdb.set_trace()
-
-    f_hat, est_gp = run_gp_ode(ode_data, X_ph, y_ph,  ode, x_id, seed)
-
-    if ipad_data:
-        f_true = ipad_data['params_config']['truth_ode_format'][x_id]
-        correct = None
-    else:
-        f_true = ode.get_expression()[x_id]
-        if not isinstance(f_true, tuple):
-            correct = sympy.simplify(f_hat - f_true) == 0
+    for traj in range(yts.shape[0]):
+        yt = yts[traj:traj+1, :, :]
+        print("yt.shape", yt.shape)
+        if ipad_data:
+            t = ipad_data['t_series_list'][args.env_id]
         else:
-            correct_list = [sympy.simplify(f_hat - f) == 0 for f in f_true]
-            correct = max(correct_list) == 1
-    print(f_hat, f_true)
-#         print(correct_list)
-    # results/${ode}/noise-${noise}-seed-${seed}-env-${env}.txt
-    # s, f_hat, f_true, x_id
+            t = dg.solver.t[:yt.shape[0]]
+        ode_data, X_ph, y_ph, t_new = get_ode_data(yt, x_id, t, dg, ode, n_basis, basis_obj,
+                                                  env=args.env_id)
 
-    log_end_time = get_now_string()
-    end = time.time()
+        # path_base = 'results_vi/{}/noise-{}/sample-{}/freq-{}/n_basis-{}/basis-{}'.\
+        #     format(ode_name, noise_ratio, n_sample, freq, n_basis, basis_str)
+        #
+        # if not os.path.isdir(path_base):
+        #     os.makedirs(path_base)
 
-    f_true_clear = ipad_params_config['truth_ode_format'][x_id].format(*[1.0 for _ in range(len(ipad_params_config["random_params_base"]))])
-    f_true_clear = simplify_and_replace_constants(f_true_clear)
+        # for s in range(seed, seed+1):
+    #         print(' ')
 
-    f_hat_clear = str(f_hat)
-    for i_curve, one_curve_name in enumerate(curve_names):
-        f_hat_clear = f_hat_clear.replace(f"X{i_curve}", one_curve_name)
-    f_hat_clear = simplify_and_replace_constants(f_hat_clear)
+        print('Running with seed {}'.format(seed))
+        start = time.time()
+    #         print(X_ph.shape, y_ph.shape, x_id)
+    #         import pdb;pdb.set_trace()
 
-    match = judge_expression_equal(f_true_clear, f_hat_clear)
+        f_hat, est_gp = run_gp_ode(ode_data, X_ph, y_ph,  ode, x_id, seed)
 
-    end_result_line = f"{log_start_time},{log_end_time},{data_timestring},{ode_name},{ipad_args.n_dynamic},{x_id},{correct},{noise_ratio:.3f},{args.env_id},{end-start},{f_hat},{f_true},{f_hat_clear},{f_true_clear},{match},{seed}\n"
-    with open(log_path, "a") as f:
-        f.write(end_result_line)
-    print(end_result_line)
+        if ipad_data:
+            f_true = ipad_data['params_config']['truth_ode_format'][x_id]
+            correct = None
+        else:
+            f_true = ode.get_expression()[x_id]
+            if not isinstance(f_true, tuple):
+                correct = sympy.simplify(f_hat - f_true) == 0
+            else:
+                correct_list = [sympy.simplify(f_hat - f) == 0 for f in f_true]
+                correct = max(correct_list) == 1
+        print(f_hat, f_true)
+    #         print(correct_list)
+        # results/${ode}/noise-${noise}-seed-${seed}-env-${env}.txt
+        # s, f_hat, f_true, x_id
+
+        log_end_time = get_now_string()
+        end = time.time()
+
+        f_true_clear = ipad_params_config['truth_ode_format'][x_id].format(*[1.0 for _ in range(len(ipad_params_config["random_params_base"]))])
+        f_true_clear = simplify_and_replace_constants(f_true_clear)
+
+        f_hat_clear = str(f_hat)
+        for i_curve, one_curve_name in enumerate(curve_names):
+            f_hat_clear = f_hat_clear.replace(f"X{i_curve}", one_curve_name)
+        f_hat_clear = simplify_and_replace_constants(f_hat_clear)
+
+        match = judge_expression_equal(f_true_clear, f_hat_clear)
+
+        end_result_line = f"{log_start_time},{log_end_time},{data_timestring},{ode_name},{ipad_args.n_dynamic},{x_id},{correct},{noise_ratio:.3f},{args.env_id},{traj},{end-start},{f_hat},{f_true},{f_hat_clear},{f_true_clear},{match},{seed}\n"
+        with open(log_path, "a") as f:
+            f.write(end_result_line)
+        print(end_result_line)
         # f.write(f"{log_end_time},truth,{str(f_true)}\n")
         # f.write(f"{log_end_time},prediction,{str(f_hat)}\n")
 
