@@ -247,6 +247,7 @@ def extract(expression):
     :return: [2*sin(x), -3*x**2, 2*x*y, 3*y], [sin(x), x**2, x*y, y], [2, -3, 2, 3]
     """
     expr = sp.sympify(expression)
+    expr = sp.expand(expr)
     raw_terms = list(sp.Add.make_args(expr))
     # print(raw_terms)
     result = []
@@ -600,7 +601,7 @@ def most_common(lst):
             return item
 
 
-def simplify_and_replace_constants(expr_str):
+def simplify_and_replace_constants_old(expr_str):
     """
     Replaces all float numbers in the equation string with 'C', except when they
     appear as power indices (e.g., in x ** 2).
@@ -624,6 +625,43 @@ def simplify_and_replace_constants(expr_str):
 
     return modified_expr
 
+
+def simplify_and_replace_constants(expr_str, threshold=1e-10):
+    """
+    Replaces all float numbers in the equation string with 'C', except when they
+    appear as power indices (e.g., in x ** 2). Removes very small constants
+    (below threshold).
+
+    Args:
+        expr_str (str): The input equation as a string.
+        threshold (float): Smallest absolute value of constants to keep.
+
+    Returns:
+        str: The equation with float numbers replaced by 'C' or removed if too small.
+    """
+    expr_str = str(sp.sympify(expr_str))
+
+    # Pattern to match floats (both regular and scientific notation) excluding exponents
+    pattern = r'(?<!\*\*)\b(\d+\.\d+([eE][+-]?\d+)?|\d+\b)\b'
+
+    def replace_match(match):
+        # Convert match to float and replace or remove based on threshold
+        value = float(match.group(0))
+        if abs(value) < threshold:
+            return ''  # Remove if the value is below threshold
+        else:
+            return 'C'  # Replace with 'C' if it's significant
+
+    # Replace matches using the defined function
+    modified_expr = re.sub(pattern, replace_match, expr_str)
+
+    # Further process to clean up and standardize format
+    modified_expr = str(sp.simplify(modified_expr))
+    modified_expr = modified_expr.replace("-", "+")
+    if modified_expr[0] == "+":
+        modified_expr = modified_expr[1:]
+
+    return modified_expr
 
 def generate_ordered_indices(total_size, train_size, val_size, test_size):
     assert train_size + val_size + test_size == total_size, f"{train_size} + {val_size} + {test_size} == {total_size}"
@@ -708,12 +746,12 @@ if __name__ == "__main__":
     # print(result2)
     # print(result3)
 
-    str1 = "C*x*(-C*y + C)"
-    str2 = "-0.39*x+1.0*x*y"
-
-    print(simplify_and_replace_constants(str1))
-    print(simplify_and_replace_constants(str2))
-    print(judge_expression_equal(simplify_and_replace_constants(str1), simplify_and_replace_constants(str2)))
+    # str1 = "C*x*(-C*y + C)"
+    # str2 = "-0.39*x+1.0*x*y"
+    #
+    # print(simplify_and_replace_constants(str1))
+    # print(simplify_and_replace_constants(str2))
+    # print(judge_expression_equal(simplify_and_replace_constants(str1), simplify_and_replace_constants(str2)))
 
     # print(simplify_and_replace_constants("11.2*x*(-4.5)*y+0.09*x"))
 
@@ -764,7 +802,17 @@ if __name__ == "__main__":
 
     # expr1 = "3*y+2*sin(x)-3*x**2+2.1*x*y"
     # expr2 = "15*x**2*y/(x + 1) - 13*x*2.0*y/(x + 25) + 5.1*x/(x + 5.0)"
-    # parts = extract(expr1)
+    expr = "0.2493758876894922*X0 + 5.335482191323051e-5*X1**5*(12.729676717640423 - X1) + 0.009395953679054971*X1**3 - X1**2"
+    print("[Original expr:]", expr)
+    full_terms, terms, coefficient_terms = extract(expr)
+    expr = " + ".join([str(item) for item in full_terms])
+    print("[Before replacing constants:]", expr)
+    expr = simplify_and_replace_constants(expr)
+    print("[After replacing constants:]", expr)
+    # print("case:", full_terms, terms, coefficient_terms)
+    # expr = "1**2*y**1 + 1*x + 1*y*y**1 + 1*y**1 + 1e + y**1"
+    # full_terms, terms, coefficient_terms = extract(expr)
+    # print("case2:", full_terms, terms, coefficient_terms)
     # print(parts)
     # # print(score_match_terms(parts[1], parts[1]))
     # print(get_partial_mask(3, 5, 888))
