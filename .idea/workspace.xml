@@ -4,10 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="de4e0acf-f1a8-4b2a-9c6d-6ab5347329c3" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/invariant_physics/dataset/_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/invariant_physics/dataset/_utils.py" afterDir="false" />
-    </list>
+    <list default="true" id="de4e0acf-f1a8-4b2a-9c6d-6ab5347329c3" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -66,7 +63,7 @@
       <workItem from="1729284792017" duration="93000" />
       <workItem from="1729284890621" duration="10313000" />
       <workItem from="1729368019069" duration="12082000" />
-      <workItem from="1730161538854" duration="2856000" />
+      <workItem from="1730161538854" duration="3597000" />
     </task>
     <servers />
   </component>
