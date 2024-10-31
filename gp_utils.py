@@ -37,7 +37,7 @@ def back_X(s):
     return s
 
 
-def gp_to_pysym_with_coef(est_gp, ode, tol=None, tol2=None, expand=False):
+def gp_to_pysym_with_coef(est_gp, ode, tol=None, tol2=None, expand=False, return_full=False):
     VarDict = ode.get_var_dict()
     f_star = est_gp._program
     f_star_list, var_list, coef_list = parse_program_to_list(f_star.program)
@@ -53,6 +53,8 @@ def gp_to_pysym_with_coef(est_gp, ode, tol=None, tol2=None, expand=False):
         f_star_sympy = sympy.expand(f_star_sympy)
 
     fs = str(f_star_sympy)
+    if return_full:
+        return fs 
     print(fs)
 
     fs = mask_X(fs)
@@ -152,5 +154,5 @@ def run_gp_ode(ode_data, X_train, y_train, ode, x_id=0, seed=0):
     if ode.name == 'SelkovODE':
         a = gp_to_pysym_with_coef(est_gp, ode, tol=0.05, tol2=0.01, expand=True)
     else:
-        a = gp_to_pysym_with_coef(est_gp, ode)
+        a = gp_to_pysym_with_coef(est_gp, ode, return_full=True)
     return a, est_gp

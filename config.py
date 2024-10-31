@@ -346,7 +346,7 @@ default_config = {'population_size': 15000,
                    'stopping_criteria': 0.01,
                    'max_samples': 1.0,
                    'verbose': 0,
-                   'parsimony_coefficient': 0.01,
+                   'parsimony_coefficient': 0.05,
                    'init_depth': (1, 6),
                    'n_jobs': 2,
                    'low_memory': True

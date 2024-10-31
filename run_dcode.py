@@ -17,7 +17,7 @@ import pandas as pd
 import pytz
 import sys
 
-from invariant_physics.dataset import simplify_and_replace_constants, judge_expression_equal
+from invariant_physics.dataset import simplify_and_replace_constants, judge_expression_equal, extract
 
 current_dir = os.getcwd()
 sys.path.insert(0, os.path.join(current_dir, 
@@ -52,31 +52,31 @@ def run(ode_name, ode_param, x_id, freq, n_sample, noise_ratio, seed, n_basis, b
 
     
     import pandas as pd
-    try:
-        # df = pd.read_csv(f"{save_dir}/summary_{args.dataset}.csv", header=None,
-        #                 names=['end_time', 'status', 'ODE', 'x_id', 'correct', 'noise', 'env_id', 'seed', "time_elapsed"]
-        #                 )
-        df = pd.read_csv(f"{save_dir}/summary_{args.dataset}.csv")
-        # df = df[df["status"] == "End"]
-        df = df.astype({
-        #     'term_success_predicted_rate': 'float32',
-        #     'correct': 'bool',
-            'env_id': 'int32',
-            'seed': 'int32',
-            'x_id': 'float32',
-            'noise': 'float32',
-        })
-        df["correct"] = df["correct"].apply(lambda x: True if x=="True" else False)
-        current_entry = df[(df.seed==seed) & (df.env_id==args.env_id) & (df.x_id==x_id) & (df.noise==noise_ratio) & (df.n_dynamic==ipad_args.n_dynamic) &  (df["task"]==ode_name)]
-        if len(current_entry) == 0:
-            pass
-        else:
-            print(current_entry)
-            print("Entry already seen, skipping..")
-            return
-    except:
-        print("Can't find summary in", save_dir)
-        pass
+#     try:
+#         # df = pd.read_csv(f"{save_dir}/summary_{args.dataset}.csv", header=None,
+#         #                 names=['end_time', 'status', 'ODE', 'x_id', 'correct', 'noise', 'env_id', 'seed', "time_elapsed"]
+#         #                 )
+#         df = pd.read_csv(f"{save_dir}/summary_{args.dataset}.csv")
+#         # df = df[df["status"] == "End"]
+#         df = df.astype({
+#         #     'term_success_predicted_rate': 'float32',
+#         #     'correct': 'bool',
+#             'env_id': 'int32',
+#             'seed': 'int32',
+#             'x_id': 'float32',
+#             'noise': 'float32',
+#         })
+#         df["correct"] = df["correct"].apply(lambda x: True if x=="True" else False)
+#         current_entry = df[(df.seed==seed) & (df.env_id==args.env_id) & (df.x_id==x_id) & (df.noise==noise_ratio) & (df.n_dynamic==ipad_args.n_dynamic) &  (df["task"]==ode_name)]
+#         if len(current_entry) == 0:
+#             pass
+#         else:
+#             print(current_entry)
+#             print("Entry already seen, skipping..")
+#             return
+#     except:
+#         print("Can't find summary in", save_dir)
+#         pass
     
     np.random.seed(seed)
 
@@ -132,6 +132,7 @@ def run(ode_name, ode_param, x_id, freq, n_sample, noise_ratio, seed, n_basis, b
                 correct_list = [sympy.simplify(f_hat - f) == 0 for f in f_true]
                 correct = max(correct_list) == 1
         print(f_hat, f_true)
+#         import pdb;pdb.set_trace()
     #         print(correct_list)
         # results/${ode}/noise-${noise}-seed-${seed}-env-${env}.txt
         # s, f_hat, f_true, x_id
@@ -142,10 +143,17 @@ def run(ode_name, ode_param, x_id, freq, n_sample, noise_ratio, seed, n_basis, b
         f_true_clear = ipad_params_config['truth_ode_format'][x_id].format(*[1.0 for _ in range(len(ipad_params_config["random_params_base"]))])
         f_true_clear = simplify_and_replace_constants(f_true_clear)
 
-        f_hat_clear = str(f_hat)
-        for i_curve, one_curve_name in enumerate(curve_names):
-            f_hat_clear = f_hat_clear.replace(f"X{i_curve}", one_curve_name)
-        f_hat_clear = simplify_and_replace_constants(f_hat_clear)
+#         f_hat_clear = str(f_hat)
+#         for i_curve, one_curve_name in enumerate(curve_names):
+#             f_hat_clear = f_hat_clear.replace(f"X{i_curve}", one_curve_name)
+#         f_hat_clear = simplify_and_replace_constants(f_hat_clear)
+        
+        print("[Original expr:]", f_hat)
+        full_terms, terms, coefficient_terms = extract(f_hat)
+        expr = " + ".join([str(item) for item in full_terms])
+        print("[Before replacing constants:]", expr)
+        f_hat_clear = simplify_and_replace_constants(expr)
+        print("[After replacing constants:]", f_hat_clear)
 
         match = judge_expression_equal(f_true_clear, f_hat_clear)
 
