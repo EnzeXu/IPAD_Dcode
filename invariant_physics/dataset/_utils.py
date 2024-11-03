@@ -656,7 +656,7 @@ def simplify_and_replace_constants(expr_str, threshold=1e-10):
     modified_expr = re.sub(pattern, replace_match, expr_str)
 
     # Further process to clean up and standardize format
-    modified_expr = str(sp.simplify(modified_expr))
+    modified_expr = str(sp.expand(modified_expr))
     modified_expr = modified_expr.replace("-", "+")
     if modified_expr[0] == "+":
         modified_expr = modified_expr[1:]

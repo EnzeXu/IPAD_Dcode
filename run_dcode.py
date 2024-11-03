@@ -149,6 +149,10 @@ def run(ode_name, ode_param, x_id, freq, n_sample, noise_ratio, seed, n_basis, b
 #         f_hat_clear = simplify_and_replace_constants(f_hat_clear)
         
         print("[Original expr:]", f_hat)
+        f_hat = str(f_hat)
+        for i_curve, one_curve_name in enumerate(curve_names):
+            f_hat = f_hat.replace(f"X{i_curve}", one_curve_name)
+
         full_terms, terms, coefficient_terms = extract(f_hat)
         expr = " + ".join([str(item) for item in full_terms])
         print("[Before replacing constants:]", expr)

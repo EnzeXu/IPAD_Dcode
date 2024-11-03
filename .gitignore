@@ -143,5 +143,6 @@ results*
 nohup.out
 
 .idea/workspace.xml
-.idea/*
 
+
+.DS_Store
