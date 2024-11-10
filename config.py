@@ -30,6 +30,17 @@ def get_config(ode, x_id=0):
         return lv_config
     elif ode.name == 'SirODE':
         return sir_config
+    elif hasattr(ode, 'data'):
+        if ode.name == "Lotka_Volterra":
+            return ipad_lv_config
+        elif ode.name == "SIR":
+            return ipad_sir_config
+        elif ode.name == "Lorenz":
+            return ipad_lorenz_config
+        elif ode.name == "Friction_Pendulum":
+            return ipad_friction_pen_config
+        else:
+            return default_config
     else:
         return default_config
 
@@ -351,4 +362,75 @@ default_config = {'population_size': 15000,
                    'n_jobs': 2,
                    'low_memory': True
                    }
+
+## IPAD configs
+ipad_lv_config = {'population_size': 15000,
+                   'p_crossover': 0.6903,
+                   'p_subtree_mutation': 0.133,
+                   'p_hoist_mutation': 0.0361,
+                   'p_point_mutation': 0.0905,
+                   'function_set': {'sub': 1, 'mul': 3, 'add': 1},
+                   'const_range': (0.01, 30.0),
+                   'generations': 20,
+                   'stopping_criteria': 0.01,
+                   'max_samples': 1.0,
+                   'verbose': 0,
+                   'parsimony_coefficient': 0.1,
+                   'init_depth': (1, 6),
+                   'n_jobs': 2,
+                   'low_memory': True
+                   }
+
+ipad_sir_config = {'population_size': 15000,
+                   'p_crossover': 0.6903,
+                   'p_subtree_mutation': 0.133,
+                   'p_hoist_mutation': 0.0361,
+                   'p_point_mutation': 0.0905,
+                   'function_set': {'sub': 1, 'mul': 3, 'add': 1},
+                   'const_range': (0.005, 0.1),
+                   'generations': 20,
+                   'stopping_criteria': 0.01,
+                   'max_samples': 1.0,
+                   'verbose': 0,
+                   'parsimony_coefficient': 0.1,
+                   'init_depth': (1, 6),
+                   'n_jobs': 2,
+                   'low_memory': True
+                   }
+
+ipad_lorenz_config = {'population_size': 15000,
+                   'p_crossover': 0.6903,
+                   'p_subtree_mutation': 0.133,
+                   'p_hoist_mutation': 0.0361,
+                   'p_point_mutation': 0.0905,
+                   'function_set': {'sub': 1, 'mul': 3, 'add': 1},
+                   'const_range': (2, 30),
+                   'generations': 20,
+                   'stopping_criteria': 0.01,
+                   'max_samples': 1.0,
+                   'verbose': 0,
+                   'parsimony_coefficient': 0.1,
+                   'init_depth': (1, 6),
+                   'n_jobs': 2,
+                   'low_memory': True
+                   }
+
+ipad_friction_pen_config = {'population_size': 15000,
+                   'p_crossover': 0.6903,
+                   'p_subtree_mutation': 0.133,
+                   'p_hoist_mutation': 0.0361,
+                   'p_point_mutation': 0.0905,
+                   'function_set': {'sub': 1, 'mul': 3, 'add': 1, 'sin': 3, 'div': 3},
+                   'const_range': (0.5, 3.0),
+                   'generations': 20,
+                   'stopping_criteria': 0.01,
+                   'max_samples': 1.0,
+                   'verbose': 0,
+                   'parsimony_coefficient': 0.1,
+                   'init_depth': (1, 6),
+                   'n_jobs': 2,
+                   'low_memory': True
+                   }
+
+
 
