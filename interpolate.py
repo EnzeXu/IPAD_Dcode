@@ -68,6 +68,9 @@ def get_ode_data(yt, x_id, t, dg, ode, config_n_basis=None, config_basis=None,
         yt = np.transpose(yt, (1,0,2))
     else:
         yt = yt.reshape(yt.shape[0], 1, yt.shape[-1])
+    
+    yt = np.repeat(yt, 2, axis=1)
+
     # print(yt.shape)
     X_sample_list = list()
     pca_list = []
